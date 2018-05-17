@@ -1,0 +1,296 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package vista;
+
+import java.awt.AWTException;
+import java.awt.SystemTray;
+import java.awt.TrayIcon;
+import java.net.Inet4Address;
+
+import java.net.MalformedURLException;
+import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
+import logica.Cliente;
+import logica.OperacionesCliente;
+import logica.OperacionesServidor;
+import logica.Utilidad;
+
+/**
+ *
+ * @author laboratorio sof 1
+ */
+public class VentanaCliente extends javax.swing.JFrame {
+
+    /**
+     * Creates new form VentanaPrincipalCliente
+     */
+    Registry registrador;
+    Cliente ejecucion;
+
+    public boolean estado = false;
+
+    public VentanaCliente() {
+
+        initComponents();
+
+    }
+
+    public void iniciarCliente(String ipServidor, String puertoS) {
+
+        OperacionesServidor nuevo = null;
+        try {
+
+            /*
+                Antes de crear un objeto cliente del cual dispondrá el servidor, verificamos que el servidor 
+                ya haya creado el de él y esté disponible para cualquier cliente que se quiera conectar al mismo.
+             */
+            Utilidad.setCodeBase(OperacionesServidor.class);
+
+            try {
+                nuevo = (OperacionesServidor) Naming.lookup("//" + ipServidor + ":" + puertoS + "/ObjetoServidor");
+                System.out.println("Datos del servidor " + nuevo.propiedadesServidor());
+                this.setVisible(false);
+
+            } catch (NotBoundException | MalformedURLException | RemoteException ex) {
+                System.out.println("Error, el servidor no está activo! :::::");
+
+                JOptionPane.showMessageDialog(null, "Se debe iniciar el servidor");
+            }
+
+            Cliente object = new Cliente(8200, Integer.parseInt(puertoS), ipServidor);
+
+            // Ahora trabajaremos con la interfaz del cliente, Operaciones. Por tanto, le cambiamos el valor a CodeBase
+            Utilidad.setCodeBase(OperacionesCliente.class);
+
+            /*
+                Creamos un objeto remoto de tipo cliente del cual hará uso el servidor para hacer cada una de las 
+                instrucciones estipuladas.
+                Al momento de asignarle al cliente un puerto por el cual escuchará, se debe tener en cuenta que si
+                el servidor se está ejecutando en el mismo computador y asignarle el puerto de escucha a éste distinto
+                del puerto del cliente.
+             */
+            OperacionesCliente ObjetoRemoto = (OperacionesCliente) UnicastRemoteObject.exportObject(object, 8200);
+
+            registrador = LocateRegistry.createRegistry(8200);
+
+            registrador.rebind("ObjetoCliente", ObjetoRemoto);
+
+            /*
+            Después de haber creado el objeto remoto de cliente, se llama al método agregaCliente para guardar
+            al cliente que se ha creado y conectado.
+             */
+            String ipCliente = "";
+            try {
+                ipCliente = Inet4Address.getLocalHost().getHostAddress();
+            } catch (UnknownHostException ex) {
+                Logger.getLogger(VentanaCliente.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            nuevo.agregarCliente(ipCliente, 8200); // Le inidicamos al servidor que puede contar con nosotros
+
+            System.out.println("Cliente Listo");
+
+            /*
+            Se envía el proceso a segundo plano y de inmediato, se bloquea el computador como primera instrucción
+            ejecutada.
+             */
+        } catch (Exception e) {
+            System.out.println("Error : " + e.getMessage());
+
+        }
+
+    } // CIERRE DEL MÉTODO INICIARCLIENTE()
+
+    /*
+    Hace que el objeto remoto del cliente, deje de ser usado por cualquier otro que lo requiera.
+     */
+    public void detenerCliente() {
+        try {
+            registrador.unbind("ObjectoCliente");
+            UnicastRemoteObject.unexportObject(registrador, true);
+            System.out.println("Cliente desconectado ...");
+            estado = false;
+            jButton1.setText("Conectar");
+
+        } catch (Exception e) {
+            System.out.println("Error " + e.getMessage());
+        }
+
+    }
+
+    /*
+    Exporta el proceso al segundo plano para que el usuario no tenga pleno control de él, 
+    sólo lo puede tener el servidor.
+     */
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
+     */
+    @SuppressWarnings("unchecked")
+    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
+    private void initComponents() {
+
+        popupMenu1 = new java.awt.PopupMenu();
+        jLabel1 = new javax.swing.JLabel();
+        jTextFieldIPServidor = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
+        jTextFieldPuertoServidor = new javax.swing.JTextField();
+        jButton1 = new javax.swing.JButton();
+        jButton2 = new javax.swing.JButton();
+
+        popupMenu1.setLabel("popupMenu1");
+
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Cliente RMI");
+        setResizable(false);
+
+        jLabel1.setText("IP :");
+
+        jTextFieldIPServidor.setText("127.0.0.1");
+        jTextFieldIPServidor.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextFieldIPServidorActionPerformed(evt);
+            }
+        });
+
+        jLabel2.setText("PUERTO :");
+
+        jTextFieldPuertoServidor.setText("8779");
+
+        jButton1.setText("Conectar");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
+
+        jButton2.setText("Cancelar");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
+        getContentPane().setLayout(layout);
+        layout.setHorizontalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(18, 18, 18)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel2)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 42, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jTextFieldIPServidor, javax.swing.GroupLayout.DEFAULT_SIZE, 149, Short.MAX_VALUE)
+                            .addComponent(jTextFieldPuertoServidor)))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(33, 33, 33)
+                        .addComponent(jButton1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 39, Short.MAX_VALUE)
+                        .addComponent(jButton2)))
+                .addContainerGap(19, Short.MAX_VALUE))
+        );
+        layout.setVerticalGroup(
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(layout.createSequentialGroup()
+                .addGap(32, 32, 32)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jTextFieldIPServidor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(26, 26, 26)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel2)
+                    .addComponent(jTextFieldPuertoServidor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton1)
+                    .addComponent(jButton2))
+                .addContainerGap(20, Short.MAX_VALUE))
+        );
+
+        pack();
+    }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        if (estado == false) {
+            iniciarCliente(jTextFieldIPServidor.getText(), jTextFieldPuertoServidor.getText());
+        } else {
+            detenerCliente();
+
+        }
+
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        System.exit(0);        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jTextFieldIPServidorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextFieldIPServidorActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextFieldIPServidorActionPerformed
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String args[]) {
+        /* Set the Nimbus look and feel */
+        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
+        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
+         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
+         */
+        try {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (ClassNotFoundException ex) {
+            java.util.logging.Logger.getLogger(VentanaCliente.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            java.util.logging.Logger.getLogger(VentanaCliente.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            java.util.logging.Logger.getLogger(VentanaCliente.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(VentanaCliente.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        }
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
+
+        /* Create and display the form */
+        java.awt.EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                new VentanaCliente().setVisible(true);
+            }
+        });
+    }
+
+    // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButton1;
+    private javax.swing.JButton jButton2;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JTextField jTextFieldIPServidor;
+    private javax.swing.JTextField jTextFieldPuertoServidor;
+    private java.awt.PopupMenu popupMenu1;
+    // End of variables declaration//GEN-END:variables
+}
